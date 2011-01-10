@@ -3,12 +3,16 @@
   xmlns:android="http://schemas.android.com/apk/res/android">
 <item android:id="@+id/open_menu" android:title="Open" android:icon="@android:drawable/ic_menu_search">
 </item>
-<item android:id="@+id/options_menu" android:title="Options" android:enabled="true" android:icon="@android:drawable/ic_menu_more">
+<item android:id="@+id/font_menu" android:title="Font" android:icon="@android:drawable/ic_menu_edit">
 	<menu>
-		<item android:id="@+id/home_menu" android:title="Home" android:enabled="true">
+		<item android:id="@+id/small_font" android:title="Small" android:enabled="true">
 		</item>
-		<item android:id="@+id/quit_menu" android:title="Quit" android:enabled="true">
-		</item>
+		<item android:id="@+id/medium_font" android:title="Medium" android:enabled="true">
+		</item>				
+		<item android:id="@+id/large_font" android:title="Large" android:enabled="true">
+		</item>	
 	</menu> 
+</item>
+<item android:id="@+id/quit_menu" android:title="Quit" android:icon="@android:drawable/ic_menu_close_clear_cancel">
 </item>
 </menu>

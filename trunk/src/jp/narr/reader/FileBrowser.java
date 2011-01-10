@@ -14,23 +14,22 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 /***
+ * @author Kosuke Miyoshi
+ * made some changes for usability, and preferences.
+ *
  * @author John Lombard
  * This class belongs to Jonh Lombard from anddev.org, its a very basic class  but its a good starting point for a filebrowser
  * i made a few changes to make it compatible to 1.6, all the credit belong to him.
  */
 public class FileBrowser extends ListActivity {
-	private enum DISPLAYMODE {
-		ABSOLUTE, 
-		RELATIVE;
-	}
-
 	static final String LOGTAG = "FileBrowser";
-	private final DISPLAYMODE displayMode = DISPLAYMODE.RELATIVE;
 	private List<String> directoryEntries = new ArrayList<String>();
 	private File currentDirectory = new File("/sdcard/");
 	private SharedPreferences prefs;
+	private File sdcardTop = new File("/sdcard");
 
 	/** Called when the activity is first created. */
 	@Override
@@ -54,7 +53,8 @@ public class FileBrowser extends ListActivity {
 	 * This function browses to the root-directory of the file-system.
 	 */
 	private void browseToRoot() {
-		browseTo( new File("/sdcard/") );
+		//browseTo( new File("/sdcard/") );
+		browseTo( sdcardTop );
 	}
 
 	/**
@@ -62,6 +62,10 @@ public class FileBrowser extends ListActivity {
 	 * currentDirectory
 	 */
 	private void upOneLevel() {
+		if( currentDirectory.equals(sdcardTop) ) {
+			Toast.makeText(this, "already in top directory", Toast.LENGTH_SHORT).show();
+			return;
+		}
 		if ( currentDirectory.getParent() != null ) {
 			browseTo(currentDirectory.getParentFile());
 		}
@@ -87,6 +91,8 @@ public class FileBrowser extends ListActivity {
 		if (dir.isDirectory()) {
 			currentDirectory = dir;
 			fill(dir.listFiles());
+			setTitle(dir.getPath());
+
 		} else {
 			// save directory
 			File parent = dir.getParentFile();
@@ -110,23 +116,17 @@ public class FileBrowser extends ListActivity {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
-		//directoryEntries.add(".");
 		if (currentDirectory.getParent() != null) {
 			directoryEntries.add("..");
 		}
 		if (files != null) {
-			switch (displayMode) {
-				case ABSOLUTE:
-					for (File file : files) {
-						directoryEntries.add(file.getPath());
-					}
-					break;
-				case RELATIVE: // On relative Mode, we have to add the current-path to the beginning
-					int currentPathStringLenght = currentDirectory.getAbsolutePath().length();
-					for (File file : files) {
-						directoryEntries.add(file.getAbsolutePath().substring(currentPathStringLenght));
-					}
-					break;
+			int currentPathStringLength = currentDirectory.getAbsolutePath().length();
+			for (File file : files) {
+				if( file.isDirectory() ) {
+					directoryEntries.add( file.getName() + "/");
+				} else {
+					directoryEntries.add( file.getName() );
+				}
 			}
 		}
 
@@ -140,25 +140,10 @@ public class FileBrowser extends ListActivity {
 	protected void onListItemClick(ListView listView, View view, int position, long id) {
 		int selectionRowID = (int)listView.getItemIdAtPosition(position);
 		String selectedFileString = directoryEntries.get(selectionRowID);
-		/*
-		if (selectedFileString.equals(".")) {
-			// Refresh
-			browseTo(currentDirectory);
-		} else
-		*/
 		if (selectedFileString.equals("..")) {
 			upOneLevel();
 		} else {
-			File clickedFile = null;
-			switch (displayMode) {
-			case RELATIVE:
-				clickedFile = new File(currentDirectory.getAbsolutePath()
-						+ directoryEntries.get(selectionRowID));
-				break;
-			case ABSOLUTE:
-				clickedFile = new File( directoryEntries.get(selectionRowID) );
-				break;
-			}
+			File clickedFile = new File( currentDirectory, directoryEntries.get(selectionRowID) );
 			if (clickedFile != null) {
 				browseTo(clickedFile);
 			}

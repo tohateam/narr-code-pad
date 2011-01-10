@@ -10,7 +10,8 @@ public class TextDocumentHandler implements DocumentHandler {
 
 	//@Override
 	public String getFileMimeType() {
-		return "text/plain";
+		//return "text/plain";
+		return "text/html";
 	}
 
 	//@Override
