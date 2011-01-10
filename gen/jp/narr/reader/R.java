@@ -14,10 +14,12 @@ public final class R {
         public static final int icon=0x7f020000;
     }
     public static final class id {
-        public static final int home_menu=0x7f060002;
+        public static final int font_menu=0x7f060001;
+        public static final int large_font=0x7f060004;
+        public static final int medium_font=0x7f060003;
         public static final int open_menu=0x7f060000;
-        public static final int options_menu=0x7f060001;
-        public static final int quit_menu=0x7f060003;
+        public static final int quit_menu=0x7f060005;
+        public static final int small_font=0x7f060002;
     }
     public static final class layout {
         public static final int file_row=0x7f030000;

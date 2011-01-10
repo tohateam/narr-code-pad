@@ -10,6 +10,7 @@ import java.net.URI;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.res.Configuration;
+import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
@@ -24,7 +25,32 @@ import android.webkit.WebView;
 import android.widget.Toast;
 
 
+/**
+ * @author Kosuke Miyoshi
+ *
+ * I wrote this code based on Cosme Zamudio's Android CodePad.
+ * I made some changes for usability, and preferences.
+ *
+ * @author Cosme Zamudio - Android SDK Examples
+ * I Grabbed this class from the SDK Examples, i actually made a lot of changes, so it doesnt look like the original one.
+ * it has the prettify functionality inside the class, it may look ugly.. but it works fine and its well organized (thats what i think)
+ * Note: Im Leaving the original comments, they might come in handy for other users reading the code 
+ *
+ * Wraps a WebView widget within an Activity. When launched, it uses the 
+ * URI from the intent as the URL to load into the WebView. 
+ * It supports all URLs schemes that a standard WebView supports, as well as
+ * loading the top level markup using the file scheme.
+ * The WebView default settings are used with the exception of normal layout 
+ * is set.
+ * This activity shows a loading progress bar in the window title and sets
+ * the window title to the title of the content.
+ *
+ */
 public class CodeReader extends Activity {
+	private static final int FONT_SMALL  = 0;
+	private static final int FONT_MEDIUM = 1;
+	private static final int FONT_LARGE  = 2;
+
 	private WebView webView;
 	
 	/**
@@ -37,12 +63,24 @@ public class CodeReader extends Activity {
 	static final String LOGTAG = "CodeReader";
 	private static final int PICK_REQUEST_CODE = 0;
 	private boolean fileBrowsing = false;
+	private SharedPreferences prefs;
+	private int fontType = FONT_SMALL;
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.main_menu, menu);
 		return true;
+	}
+
+	private void loadFontPreference() {
+		fontType = prefs.getInt("font", FONT_SMALL );
+	}
+	
+	private void saveFontPreference() {
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putInt("font", fontType);
+		ed.commit();
 	}
 	
 	/**
@@ -85,7 +123,23 @@ public class CodeReader extends Activity {
 		case R.id.open_menu:
 			openFileIntent();
 			break;
+		case R.id.small_font:
+			fontType = FONT_SMALL;
+			saveFontPreference();
+			reload();
+			break;
+		case R.id.medium_font:
+			fontType = FONT_MEDIUM;
+			saveFontPreference();
+			reload();
+			break;
+		case R.id.large_font:
+			fontType = FONT_LARGE;
+			saveFontPreference();
+			reload();
+			break;
 		case R.id.quit_menu:
+			Log.v(LOGTAG," menu quit: ");
 			quitApplication();
 			break;
 		}
@@ -152,6 +206,10 @@ public class CodeReader extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		prefs = getSharedPreferences( "pref",
+									  MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE );
+		loadFontPreference();
+
 		//CookieSyncManager.createInstance(this);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
 		webView = new WebView(this);
@@ -230,6 +288,15 @@ public class CodeReader extends Activity {
 	public void quitApplication() {
 		finish();
 	}
+
+	private Uri lastURI = null;
+	private String lastMIMEType = null;
+
+	private void reload() {
+		if( lastURI != null ) {
+			loadFile(lastURI, lastMIMEType);
+		}
+	}
 	
 	/**
 	 * Load the HTML file into the webview by converting it to a data:
@@ -244,6 +311,9 @@ public class CodeReader extends Activity {
 	 * @param mimeType mimetype provided
 	 */
 	private void loadFile(Uri uri, String mimeType) {
+		lastURI = uri;
+		lastMIMEType = mimeType;
+
 		String path = uri.getPath();
 		DocumentHandler handler = getHandlerByExtension(path);
 		
@@ -277,21 +347,35 @@ public class CodeReader extends Activity {
 			return;
 		}
 		String contentString = "";
-		setTitle("Narrative Code Reader - " + path);
+		setTitle("Narr CodePad - " + path);
 		contentString += "<html><head><title>" + path + "</title>";
 
 		contentString += "<link href='file:///android_asset/prettify.css' rel='stylesheet' type='text/css'/> ";
 		contentString += "<style type='text/css'>";
 
 		contentString += ".small { font-size: 8pt; }";
-		contentString += ".midum { font-size: 10pt; }";
+		contentString += ".medium { font-size: 10pt; }";
 		contentString += ".large { font-size: 12pt; }";
 		
 		contentString += "</style>";
 
 		contentString += "<script src='file:///android_asset/prettify.js' type='text/javascript'></script> ";
 		contentString += handler.getFileScriptFiles();
-		String fontSizeStyle = "small";
+		String fontSizeStyle;
+
+		switch(fontType) {
+		case FONT_SMALL:
+			fontSizeStyle = "small";
+			break;
+		case FONT_MEDIUM:
+			fontSizeStyle = "medium";
+			break;
+		case FONT_LARGE:
+			fontSizeStyle = "large";
+			break;
+		default:
+			fontSizeStyle = "medium";
+		}
 		contentString +=  "</head><body onload='prettyPrint()'><code class='" + handler.getFilePrettifyClass() + " " + fontSizeStyle + "'>";
 
 		String sourceString = new String(array);
