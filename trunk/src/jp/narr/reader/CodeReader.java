@@ -5,6 +5,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+
+import java.io.*;
+
 import java.net.URI;
 
 import android.app.Activity;
@@ -23,6 +26,8 @@ import android.view.Window;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
+
+import org.mozilla.universalchardet.UniversalDetector;
 
 
 /**
@@ -349,9 +354,36 @@ public class CodeReader extends Activity {
 			Log.e(LOGTAG, "Failed to access file: " + path, ex);
 			return;
 		}
+
+		String encoding = null;
+		UniversalDetector detector = new UniversalDetector(null);
+		detector.handleData(array, 0, (int)length);
+		detector.dataEnd();
+		encoding = detector.getDetectedCharset();
+		Log.v(LOGTAG, "encoding: " + encoding);
+
+		String sourceString = "";
+		try{
+			if( encoding != null ) {
+				sourceString = new String(array, encoding);
+			} else {
+				sourceString = new String(array);
+			}
+		} catch(Exception e) {
+			Log.e(LOGTAG, "Failed to decode: ", e);
+			sourceString = new String(array);
+		}
+
+		// internal encoding of Android seems to be UTF-8, so now sourceString is in UTF-8
+
 		String contentString = "";
 		setTitle("Narr CodePad - " + path);
-		contentString += "<html><head><title>" + path + "</title>";
+
+		contentString += "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">"; //..
+
+		contentString += "<html><head>";
+		contentString += ("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=\"UTF-8\">");
+		contentString += "<title>" + path + "</title>";
 
 		contentString += "<link href='file:///android_asset/prettify.css' rel='stylesheet' type='text/css'/> ";
 		contentString += "<style type='text/css'>";
@@ -381,12 +413,11 @@ public class CodeReader extends Activity {
 		}
 		contentString +=  "</head><body onload='prettyPrint()'><code class='" + handler.getFilePrettifyClass() + " " + fontSizeStyle + "'>";
 
-		String sourceString = new String(array);
-		
 		contentString += handler.getFileFormattedString(sourceString);
 		contentString += "</code> </html> ";
 		webView.getSettings().setUseWideViewPort(true);
-		webView.loadDataWithBaseURL("file:///android_asset/", contentString, handler.getFileMimeType(), "", "");
+		//webView.loadDataWithBaseURL("file:///android_asset/", contentString, handler.getFileMimeType(), encoding, "");
+		webView.loadDataWithBaseURL("file:///android_asset/", contentString, handler.getFileMimeType(), "UTF-8", "");
 		Log.v(LOGTAG, "File Loaded: " + path);
 	}
 
