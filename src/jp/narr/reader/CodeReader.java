@@ -68,8 +68,10 @@ public class CodeReader extends Activity {
 	static final String LOGTAG = "CodeReader";
 	private static final int PICK_REQUEST_CODE = 0;
 	private boolean fileBrowsing = false;
+	//private boolean menuOpened = false;
 	private SharedPreferences prefs;
 	private int fontType = FONT_SMALL;
+	private int tabSize = 4;
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -78,8 +80,9 @@ public class CodeReader extends Activity {
 		return true;
 	}
 
-	private void loadFontPreference() {
+	private void loadPreference() {
 		fontType = prefs.getInt("font", FONT_SMALL );
+		tabSize = prefs.getInt("tab", 4 );
 	}
 	
 	private void saveFontPreference() {
@@ -87,14 +90,24 @@ public class CodeReader extends Activity {
 		ed.putInt("font", fontType);
 		ed.commit();
 	}
+
+	private void saveTabPreference() {
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putInt("tab", tabSize);
+		ed.commit();		
+	}
 	
-	/**
-	 * Modify the menus according to the searching mode and matches
-	 */
 	/*
 	@Override
 	public boolean onPrepareOptionsMenu(Menu menu) {
+		Log.v(LOGTAG," menu opened");
+		menuOpened = true;
 		return super.onPrepareOptionsMenu(menu);
+	}
+	public void onOptionsMenuClosed(Menu menu) {
+		Log.v(LOGTAG," menu closed");
+		menuOpened = false;
+		super.onOptionsMenuClosed(menu);
 	}
 	*/
 	
@@ -121,13 +134,14 @@ public class CodeReader extends Activity {
 		super.onDestroy();
 		webView.destroy();
 	}
-
+	
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch( item.getItemId() ) {
 		case R.id.open_menu:
 			openFileIntent();
 			break;
+			
 		case R.id.small_font:
 			fontType = FONT_SMALL;
 			saveFontPreference();
@@ -143,6 +157,23 @@ public class CodeReader extends Activity {
 			saveFontPreference();
 			reload();
 			break;
+			
+		case R.id.tab2:
+			tabSize = 2;
+			saveTabPreference();
+			reload();
+			break;
+		case R.id.tab4:
+			tabSize = 4;
+			saveTabPreference();
+			reload();
+			break;
+		case R.id.tab8:
+			tabSize = 8;
+			saveTabPreference();
+			reload();
+			break;
+			
 		case R.id.quit_menu:
 			Log.v(LOGTAG," menu quit: ");
 			quitApplication();
@@ -153,13 +184,13 @@ public class CodeReader extends Activity {
 
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		Log.v(LOGTAG," down, keycode reader: " + keyCode);
+		//if( !fileBrowsing && !menuOpened ) {
 		if( !fileBrowsing ) {
 			if( keyCode == KeyEvent.KEYCODE_BACK ) {
 				openFileIntent();
 				return true;
 			}
 		}
-
 		return super.onKeyDown(keyCode, event);
 	}
 
@@ -168,15 +199,12 @@ public class CodeReader extends Activity {
 		Log.v(LOGTAG," up, keycode reader: " + keyCode);
 
 		if( !fileBrowsing ) {
-			if( keyCode == KeyEvent.KEYCODE_BACK ) {
-				openFileIntent();
-				return true;
-			} else if( keyCode == KeyEvent.KEYCODE_SEARCH ) {
+			if( keyCode == KeyEvent.KEYCODE_SEARCH ) {
 				openFileIntent();
 				return true;
 			}
 		}
-		return super.onKeyUp(keyCode, event); 		
+		return super.onKeyUp(keyCode, event);
 	}
 	
 	/**
@@ -216,7 +244,7 @@ public class CodeReader extends Activity {
 
 		prefs = getSharedPreferences( "pref",
 									  MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE );
-		loadFontPreference();
+		loadPreference();
 
 		//CookieSyncManager.createInstance(this);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
@@ -355,12 +383,17 @@ public class CodeReader extends Activity {
 			return;
 		}
 
+		//long time0 = System.currentTimeMillis();
+
 		String encoding = null;
 		UniversalDetector detector = new UniversalDetector(null);
 		detector.handleData(array, 0, (int)length);
 		detector.dataEnd();
 		encoding = detector.getDetectedCharset();
 		Log.v(LOGTAG, "encoding: " + encoding);
+
+		//long time1 = System.currentTimeMillis();
+		//Log.v(LOGTAG, "time: " + (time1-time0));
 
 		String sourceString = "";
 		try{
@@ -396,6 +429,11 @@ public class CodeReader extends Activity {
 
 		contentString += "<script src='file:///android_asset/prettify.js' type='text/javascript'></script> ";
 		contentString += handler.getFileScriptFiles();
+
+		contentString += "<script type='text/javascript'>";
+		contentString += "window['PR_TAB_WIDTH'] = " + tabSize + ";";
+		contentString += "</script> ";
+
 		String fontSizeStyle;
 
 		switch(fontType) {
