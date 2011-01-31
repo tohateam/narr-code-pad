@@ -5,8 +5,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-
 import java.io.*;
+import java.util.*;
 
 import java.net.URI;
 
@@ -22,10 +22,11 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
-//import android.webkit.CookieSyncManager;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.Toast;
+
+import android.text.TextUtils;
 
 import org.mozilla.universalchardet.UniversalDetector;
 
@@ -114,7 +115,6 @@ public class CodeReader extends Activity {
 	@Override
 	protected void onResume() {
 		super.onResume();
-		//CookieSyncManager.getInstance().startSync(); 
 	}
 	
 	@Override
@@ -125,7 +125,6 @@ public class CodeReader extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		//CookieSyncManager.getInstance().stopSync(); 
 		webView.stopLoading();	   
 	}
 	
@@ -246,7 +245,6 @@ public class CodeReader extends Activity {
 									  MODE_WORLD_READABLE | MODE_WORLD_WRITEABLE );
 		loadPreference();
 
-		//CookieSyncManager.createInstance(this);
 		requestWindowFeature(Window.FEATURE_PROGRESS);
 		webView = new WebView(this);
 		setContentView(webView);
@@ -409,6 +407,9 @@ public class CodeReader extends Activity {
 
 		// internal encoding of Android seems to be UTF-8, so now sourceString is in UTF-8
 
+		//boolean hilighting = false; //..
+		boolean hilighting = trur;
+
 		String contentString = "";
 		setTitle("Narr CodePad - " + path);
 
@@ -427,12 +428,13 @@ public class CodeReader extends Activity {
 		
 		contentString += "</style>";
 
-		contentString += "<script src='file:///android_asset/prettify.js' type='text/javascript'></script> ";
-		contentString += handler.getFileScriptFiles();
-
-		contentString += "<script type='text/javascript'>";
-		contentString += "window['PR_TAB_WIDTH'] = " + tabSize + ";";
-		contentString += "</script> ";
+		if( hilighting ) {
+			contentString += "<script src='file:///android_asset/prettify.js' type='text/javascript'></script> ";
+			contentString += handler.getFileScriptFiles();
+			contentString += "<script type='text/javascript'>";
+			contentString += "window['PR_TAB_WIDTH'] = " + tabSize + ";";
+			contentString += "</script> ";
+		}
 
 		String fontSizeStyle;
 
@@ -449,14 +451,63 @@ public class CodeReader extends Activity {
 		default:
 			fontSizeStyle = "medium";
 		}
-		contentString +=  "</head><body onload='prettyPrint()'><code class='" + handler.getFilePrettifyClass() + " " + fontSizeStyle + "'>";
 
-		contentString += handler.getFileFormattedString(sourceString);
-		contentString += "</code> </html> ";
+		if( hilighting ) {
+			contentString += "</head><body onload='prettyPrint()'><code class='" + handler.getFilePrettifyClass() + " " + fontSizeStyle + "'>";
+			contentString += handler.getFileFormattedString(sourceString);
+			contentString += "</code> </html> ";
+		} else {
+			contentString += "</head><pre><body><code class='" + fontSizeStyle + "'>";
+			//contentString += sourceString;
+			contentString += getTabbedString(sourceString, tabSize);
+			contentString += "</code></pre></html> ";
+		}
 		webView.getSettings().setUseWideViewPort(true);
-		//webView.loadDataWithBaseURL("file:///android_asset/", contentString, handler.getFileMimeType(), encoding, "");
 		webView.loadDataWithBaseURL("file:///android_asset/", contentString, handler.getFileMimeType(), "UTF-8", "");
 		Log.v(LOGTAG, "File Loaded: " + path);
+	}
+
+	private char buffer[];
+
+	private String getTabbedString( String str, int tabSize ) {
+		if( buffer == null ) {
+			buffer = new char[1024];
+		}
+
+		StringTokenizer st = new StringTokenizer(str, "\n");
+		StringBuilder sb = new StringBuilder();
+		while( st.hasMoreTokens() ) {
+			String line = st.nextToken();
+			line = TextUtils.htmlEncode(line); //.. 
+			line = processTabLine(line, tabSize);
+			sb.append(line);
+		}
+		return sb.toString();
+	}
+
+	private String processTabLine(String str, int tabSize) {
+		int size = str.length();
+		if( size > buffer.length-128 ) {
+			buffer = new char[size+256];
+		}
+		
+		int bufPos = 0;
+		for(int i=0; i<size; ++i) {
+			char ch = str.charAt(i);
+			if( ch == '\t' ) {
+				int padding = tabSize - (bufPos % tabSize);
+				for(int j=0; j<padding; ++j) {
+					buffer[bufPos] = ' ';
+					bufPos++;
+				}
+			} else {
+				buffer[bufPos] = ch;
+				bufPos++;
+			}
+		}
+		buffer[bufPos] = '\n';
+		bufPos++;
+		return new String(buffer, 0, bufPos);
 	}
 
 }
