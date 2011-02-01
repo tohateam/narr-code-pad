@@ -25,6 +25,15 @@
 	</menu> 
 </item>
 
+<item android:id="@+id/highlight_menu" android:title="Highlight" android:icon="@android:drawable/ic_menu_sort_by_size">
+	<menu>
+		<item android:id="@+id/highlight_on" android:title="Highlight On" android:enabled="true">
+		</item>				
+		<item android:id="@+id/highlight_off" android:title="Highlight Off (faster)" android:enabled="true">
+		</item>
+	</menu> 
+</item>
+
 <item android:id="@+id/quit_menu" android:title="Quit" android:icon="@android:drawable/ic_menu_close_clear_cancel">
 </item>
 </menu>
