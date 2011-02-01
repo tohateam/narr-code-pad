@@ -73,6 +73,7 @@ public class CodeReader extends Activity {
 	private SharedPreferences prefs;
 	private int fontType = FONT_SMALL;
 	private int tabSize = 4;
+	private boolean highlighting = true;
 	
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -84,6 +85,7 @@ public class CodeReader extends Activity {
 	private void loadPreference() {
 		fontType = prefs.getInt("font", FONT_SMALL );
 		tabSize = prefs.getInt("tab", 4 );
+		highlighting = prefs.getBoolean("highlight", true );
 	}
 	
 	private void saveFontPreference() {
@@ -95,6 +97,12 @@ public class CodeReader extends Activity {
 	private void saveTabPreference() {
 		SharedPreferences.Editor ed = prefs.edit();
 		ed.putInt("tab", tabSize);
+		ed.commit();		
+	}
+
+	private void saveHighlightingPreference() {
+		SharedPreferences.Editor ed = prefs.edit();
+		ed.putBoolean("highlight", highlighting);
 		ed.commit();		
 	}
 	
@@ -170,6 +178,17 @@ public class CodeReader extends Activity {
 		case R.id.tab8:
 			tabSize = 8;
 			saveTabPreference();
+			reload();
+			break;
+
+		case R.id.highlight_on:
+			highlighting = true;
+			saveHighlightingPreference();
+			reload();
+			break;
+		case R.id.highlight_off:
+			highlighting = false;
+			saveHighlightingPreference();
 			reload();
 			break;
 			
@@ -407,9 +426,6 @@ public class CodeReader extends Activity {
 
 		// internal encoding of Android seems to be UTF-8, so now sourceString is in UTF-8
 
-		//boolean hilighting = false; //..
-		boolean hilighting = trur;
-
 		String contentString = "";
 		setTitle("Narr CodePad - " + path);
 
@@ -428,7 +444,7 @@ public class CodeReader extends Activity {
 		
 		contentString += "</style>";
 
-		if( hilighting ) {
+		if( highlighting ) {
 			contentString += "<script src='file:///android_asset/prettify.js' type='text/javascript'></script> ";
 			contentString += handler.getFileScriptFiles();
 			contentString += "<script type='text/javascript'>";
@@ -452,7 +468,7 @@ public class CodeReader extends Activity {
 			fontSizeStyle = "medium";
 		}
 
-		if( hilighting ) {
+		if( highlighting ) {
 			contentString += "</head><body onload='prettyPrint()'><code class='" + handler.getFilePrettifyClass() + " " + fontSizeStyle + "'>";
 			contentString += handler.getFileFormattedString(sourceString);
 			contentString += "</code> </html> ";
