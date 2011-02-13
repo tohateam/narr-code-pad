@@ -133,7 +133,7 @@ public class CodeReader extends Activity {
 	@Override
 	protected void onStop() {
 		super.onStop();
-		webView.stopLoading();	   
+		webView.stopLoading();
 	}
 	
 	@Override
@@ -247,7 +247,7 @@ public class CodeReader extends Activity {
 					String path = uri.toString();
 					if (path.toLowerCase().startsWith("file://")) {
 						path = (new File(URI.create(path))).getAbsolutePath();
-						loadFile(Uri.parse(path), "text/html");
+						loadFile(Uri.parse(path), "text/html"); // TODO for path with space
 					}
 				}
 			}
@@ -267,6 +267,9 @@ public class CodeReader extends Activity {
 		requestWindowFeature(Window.FEATURE_PROGRESS);
 		webView = new WebView(this);
 		setContentView(webView);
+
+		//webView.setScrollBarStyle(WebView.SCROLLBARS_INSIDE_OVERLAY); //.. testing
+		//webView.setScrollBarStyle(WebView.SCROLLBARS_INSIDE_INSET); //.. testing
 		
 		// Setup callback support for title and progress bar
 		webView.setWebViewClient( new ProgressWebViewClient() );
@@ -490,7 +493,7 @@ public class CodeReader extends Activity {
 			buffer = new char[1024];
 		}
 
-		StringTokenizer st = new StringTokenizer(str, "\n");
+		StringTokenizer st = new StringTokenizer(str, "\r\n", true);
 		StringBuilder sb = new StringBuilder();
 		while( st.hasMoreTokens() ) {
 			String line = st.nextToken();
@@ -521,8 +524,8 @@ public class CodeReader extends Activity {
 				bufPos++;
 			}
 		}
-		buffer[bufPos] = '\n';
-		bufPos++;
+		//buffer[bufPos] = '\n';
+		//bufPos++;
 		return new String(buffer, 0, bufPos);
 	}
 
